@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Order Follow-up & Risk System – Portfolio Demonstration</title>
+<style>
+:root{--bg:#faf8f4;--card:#fff;--ink:#1e2a3a;--mut:#5b6573;--line:#dcd8cf;--acc:#1f4e79;--red:#a4262c;--amb:#7a4f00;--grn:#2e6b3f}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.45 system-ui,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:#1e2a3a;color:#fff;padding:10px 16px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;justify-content:space-between}
+header h1{font-size:17px;margin:0}.demo{font-size:12px;background:#f3e3b5;color:#4a3500;padding:2px 10px;border-radius:10px}
+#saveState{font-size:12px}
+nav{display:flex;flex-wrap:wrap;gap:4px;padding:8px 16px;border-bottom:1px solid var(--line);background:#fff}
+nav button{border:0;background:none;padding:7px 12px;border-radius:6px;cursor:pointer;color:var(--ink);font:inherit}
+nav button[aria-current=page]{background:var(--acc);color:#fff}
+main{padding:16px;max-width:1320px;margin:auto}
+h2{font-size:16px;margin:0 0 8px}.mut{color:var(--mut);margin:0 0 8px}
+button,select,input,textarea{font:inherit;color:var(--ink)}
+button{border:1px solid var(--line);background:#fff;padding:5px 10px;border-radius:6px;cursor:pointer}
+button:hover{background:#f0ece3}button.pri{background:var(--acc);color:#fff;border-color:var(--acc)}
+button.dng{background:var(--red);color:#fff;border-color:var(--red)}
+button.lnk{border:0;background:none;color:var(--acc);text-decoration:underline;padding:0;text-align:left}
+:focus-visible{outline:3px solid #2b7bd6;outline-offset:2px}
+input,select,textarea{border:1px solid #b9b4a8;border-radius:6px;padding:6px 8px;background:#fff;width:100%}
+input[readonly]{background:#eee}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px;align-items:center}.bar input,.bar select{width:auto;min-width:150px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:14px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:14px}
+.card{text-align:left;padding:12px;border-radius:8px;background:#fff;border:1px solid var(--line);border-top:4px solid var(--acc);display:flex;flex-direction:column;gap:2px}
+.card .n{font-size:28px;font-weight:700}.card small{color:var(--mut)}.card.awaiting,.card.revision,.card.due{border-top-color:#b07a00}.card.overdue,.card.risk{border-top-color:var(--red)}
+.tw{overflow-x:auto}table{border-collapse:collapse;width:100%}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}th{background:#f1eee6;white-space:nowrap}
+.b{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;white-space:nowrap;border:1px solid}
+.b.g{color:var(--grn);border-color:var(--grn)}.b.r{color:var(--red);border-color:var(--red)}.b.a{color:var(--amb);border-color:var(--amb)}.b.n{color:var(--mut);border-color:#b9b4a8}
+.flag{color:var(--red);font-weight:600}.empty{color:var(--mut);padding:8px 0}
+.att{border-left:4px solid var(--red);padding:6px 10px;margin-bottom:10px;background:#fdf6f5}.att ul{margin:4px 0 4px 18px;padding:0}.ah{display:flex;justify-content:space-between;gap:8px}.na{margin:4px 0}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+dialog{border:1px solid var(--line);border-radius:8px;max-width:920px;width:94vw;padding:0;color:var(--ink)}dialog::backdrop{background:#0006}
+.dh{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);background:#f1eee6}.dh h2{margin:0}
+.db{padding:14px 16px;max-height:80vh;overflow:auto}.x{font-size:20px;line-height:1;padding:2px 9px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}.fld label{display:block;font-weight:600;margin-bottom:2px}.wide{grid-column:1/-1}
+.err{background:#fdecea;border:1px solid var(--red);color:#6b1217;padding:8px 12px;border-radius:6px;margin-top:10px}.err ul{margin:4px 0 0 18px;padding:0}
+dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:6px 14px;margin:0}dt{font-weight:600;color:var(--mut);font-size:12px}dd{margin:0 0 4px}
+#banner{background:#fff1c9;border-bottom:1px solid #d9b94c;padding:8px 16px}
+footer{padding:14px 16px;color:var(--mut);font-size:12px;text-align:center}textarea.draft{min-height:260px;font-family:inherit}
+@media(max-width:600px){main{padding:8px}.card .n{font-size:22px}}
+.ie{min-width:110px;padding:3px 5px;border:1px solid transparent;background:transparent}.ie:hover,.ie:focus{border-color:#b9b4a8;background:#fff}
+#ordtbl td:first-child,#ordtbl th:first-child{position:sticky;left:0;background:#fff;z-index:1}#ordtbl th:first-child{background:#f1eee6}
+.rk-High{border-left-color:var(--red)}.rk-Medium{border-left-color:#b07a00;background:#fffaf0}.rk-Low,.rk-Closed{border-left-color:var(--grn);background:#f6faf7}
+#toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#1e2a3a;color:#fff;padding:8px 16px;border-radius:6px;z-index:99;max-width:90vw}#toast.bad{background:var(--red)}
+details.panel>summary{cursor:pointer;font-weight:700;font-size:16px;margin-bottom:6px}
+</style>
+</head>
+<body>
+<header><h1>Textile Order Coordination System</h1><span class="demo">Portfolio Demonstration | Fictional Sample Data</span><span id="saveState" role="status"></span></header>
+<div id="banner" role="alert" hidden></div>
+<nav id="nav" aria-label="Sections"></nav>
+<main id="app"></main>
+<footer>Independent portfolio project. Not an official Nishat Mills Limited system; not connected to or endorsed by any company. All customers and orders are fictional.</footer>
+<div id="toast" role="status" hidden></div>
+<dialog id="dlg" aria-labelledby="dttl"></dialog><dialog id="cfm"></dialog>
+<noscript>This application needs JavaScript enabled.</noscript>
+<script>
+(function(){'use strict';
+/* ===== 1. CONFIGURATION ===== */
+const APP='textile-order-coordination',KEY='tocs_v1',RECOVERY='tocs_v1_recovery',VER=1;
+const DUE_SOON=3,RISK_DAYS=7; // "due soon" = within 3 days; "at risk" window = 7 days
+const L={status:['New','In Progress','On Hold','Completed','Cancelled'],
+sample:['Not Requested','Requested','In Preparation','Sent to Client','Revision Requested','Resubmitted','Approved','Rejected'],
+approval:['Not Required','Pending','Approved','Changes Requested','Rejected'],
+production:['Not Started','Awaiting Approval','Awaiting Sample Approval','In Progress','Completed','On Hold'],
+quality:['Not Started','Pending Clearance','Cleared','Rework Required'],
+shipment:['Not Scheduled','Scheduled','Awaiting Clearance','Ready for Shipment','Shipped','Delivered','On Hold'],
+priority:['High','Medium','Low'],
+dept:['Client / Sales Coordination','Sampling','Planning','Production','Quality','Logistics / Shipment'],
+task:['Open','In Progress','Waiting for Information','Completed','Cancelled']};
+// field = [key,label,type,options,required]
+const OF=[['id','Order ID','text','',1],['client','Client name','text','',1],['product','Product / fabric description','text'],['qty','Quantity (metres)','number'],
+['created','Order creation date','date'],['shipDate','Deadline (required shipment date)','date'],['status','Overall order status','select',L.status,1],['pendingTask','Pending task','text'],
+['sample','Sample status','select',L.sample,1],['approval','Client approval status','select',L.approval,1],['production','Production status','select',L.production,1],
+['quality','Quality status','select',L.quality,1],['shipment','Shipment status','select',L.shipment,1],['owner','Responsible department','select',L.dept,1],
+['priority','Priority','select',L.priority,1],['approvalDeadline','Client approval deadline','date'],['nextFollowUp','Next follow-up date','date'],
+['lastFollowUp','Last follow-up date','date'],['nextAction','Next action','text'],['holdReason','Hold reason (required if on hold)','text'],['notes','Latest issue / notes','textarea']];
+const SF=[['sampleReq','Sample request date','date'],['sampleDesc','Sample / revision description','text'],['sample','Sample status','select',L.sample,1],
+['approval','Client approval status','select',L.approval,1],['sentDate','Date sent to client','date'],['approvalDeadline','Client approval deadline','date'],
+['feedback','Client feedback','textarea'],['requestedChanges','Requested changes / revision reason','textarea'],['revisedDate','Revised sample date','date'],
+['approvalDate','Approval date','date'],['nextFollowUp','Next follow-up date','date'],['nextAction','Next action','text']];
+const LBL={};[...OF,...SF].forEach(f=>LBL[f[0]]=f[1]);
+const TRACK=['status','sample','approval','production','quality','shipment','priority','owner','shipDate'];
+const BLANK={id:'',client:'',product:'',qty:0,created:'',shipDate:'',status:'New',sample:'Not Requested',approval:'Not Required',production:'Not Started',quality:'Not Started',shipment:'Not Scheduled',owner:L.dept[0],priority:'Medium',notes:'',pendingTask:'',nextAction:'',nextFollowUp:'',lastFollowUp:'',holdReason:'',sampleReq:'',sampleDesc:'',sentDate:'',approvalDeadline:'',feedback:'',requestedChanges:'',revisedDate:'',approvalDate:''};
+const CFGD={highShipDays:3,medShipDays:7,followWarnDays:1,pendingDays:7}; // risk rules (editable in Help & Data)
+const TB={id:'',orderId:'',dept:L.dept[0],desc:'',person:'',created:'',due:'',priority:'Medium',status:'Open',nextAction:'',latestUpdate:''};
+const DATEKEYS=['created','shipDate','nextFollowUp','lastFollowUp','approvalDeadline','sampleReq','sentDate','revisedDate','approvalDate'];
+
+/* ===== 4. DATE AND BUSINESS-RULE UTILITIES (placed early: used by seed data) ===== */
+const pad=n=>String(n).padStart(2,'0');
+const fmt=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const today=()=>fmt(new Date());
+const parse=s=>{const[a,b,c]=s.split('-').map(Number);return new Date(a,b-1,c)}; // local date, no timezone shift
+const addDays=(s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return fmt(d)};
+const diff=(a,b)=>Math.round((parse(a)-parse(b))/864e5);
+const isDate=s=>/^\d{4}-\d{2}-\d{2}$/.test(s)&&fmt(parse(s))===s;
+const show=s=>s?parse(s).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'—';
+const dayTxt=s=>{const d=diff(s,today());return d<0?(-d)+' day(s) overdue':d===0?'today':'in '+d+' day(s)'};
+const uid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const shipped=o=>['Shipped','Delivered'].includes(o.shipment);
+const isOpen=o=>!['Completed','Cancelled'].includes(o.status)&&o.shipment!=='Delivered'; // "active"
+function flags(o){
+ const f={active:isOpen(o),awaiting:false,revision:false,overdue:false,due:false,late:false,risk:false,reasons:[]};
+ if(!f.active)return f;const t=today(),R=f.reasons;
+ if(o.approval==='Pending'){f.awaiting=true;
+  if(o.approvalDeadline&&o.approvalDeadline<t){f.overdue=true;R.push('Client approval overdue by '+diff(t,o.approvalDeadline)+' day(s) (deadline '+show(o.approvalDeadline)+'). Follow up with the client.')}}
+ if(o.sample==='Revision Requested'||o.approval==='Changes Requested'){f.revision=true;R.push('Sample revision needed'+(o.requestedChanges?': '+o.requestedChanges:'. Record the requested changes.'))}
+ if(o.nextFollowUp&&o.nextFollowUp<t){f.overdue=true;R.push('Follow-up was due '+show(o.nextFollowUp)+'. Next action: '+(o.nextAction||'not set')+'.')}
+ if(o.status==='On Hold'||o.shipment==='On Hold')R.push('On hold: '+(o.holdReason||'no reason recorded')+'.');
+ if(!shipped(o)&&o.shipDate){const d=diff(o.shipDate,t);
+  if(d<0){f.late=f.risk=true;R.push('Shipment delayed: required date '+show(o.shipDate)+' has passed and the order is not marked Shipped.')}
+  else{if(d<=DUE_SOON)f.due=true;
+   if(d<=RISK_DAYS){const w=[];if(o.quality!=='Cleared')w.push('quality status is "'+o.quality+'"');
+    if(!['Approved','Not Required'].includes(o.approval))w.push('client approval is "'+o.approval+'"');if(o.shipment==='On Hold')w.push('shipment is on hold');
+    if(w.length){f.risk=true;R.push('Shipment at risk: due '+dayTxt(o.shipDate)+' but '+w.join(' and ')+'.')}}}}
+ return f}
+const M={active:['Active orders',f=>f.active,'Orders that are not Completed, Cancelled or Delivered.'],
+awaiting:['Awaiting client approval',f=>f.awaiting,'Active orders whose client approval is Pending.'],
+revision:['Sample revisions needed',f=>f.revision,'Active orders with sample status Revision Requested or approval Changes Requested.'],
+overdue:['Overdue actions',f=>f.overdue,'Active orders with a pending approval past its deadline, or a follow-up date before today.'],
+due:['Shipments due soon',f=>f.due,'Active, unshipped orders with a required shipment date in the next 3 days (including today).'],
+risk:['Shipment / quality risks',f=>f.risk,'Active, unshipped orders past their shipment date, or due within 7 days with quality clearance or client approval incomplete, or on hold.']};
+const guard=v=>['Ready for Shipment','Shipped','Delivered'].includes(v.shipment)&&v.quality!=='Cleared'?
+ 'Cannot set shipment to "'+v.shipment+'" because quality status is "'+v.quality+'". Confirm clearance with the Quality team, set Quality status to "Cleared", then save again.':'';
+
+/* ---- Risk engine: High / Medium / Low calculated from status, pending items and dates (rules in S.config) ---- */
+const RK={High:3,Medium:2,Low:1,Closed:0};
+function risk(o){const f=flags(o);
+ if(!f.active)return{level:'Closed',reason:'Order is '+(['Completed','Cancelled'].includes(o.status)?o.status.toLowerCase():'delivered')+'; no active alerts.',action:'No action needed.',key:'closed'};
+ const c=S.config,t=today(),H=[],Md=[],un=!shipped(o)&&o.shipDate,sd=un?diff(o.shipDate,t):null,
+ apr=o.approval==='Pending',ps=['Requested','In Preparation','Revision Requested'].includes(o.sample)||o.approval==='Changes Requested',dep=apr||ps,
+ ad=o.approvalDeadline?diff(o.approvalDeadline,t):null,what=apr?'Client approval':'Revised sample',blocked=['Awaiting Approval','Awaiting Sample Approval'].includes(o.production),
+ gap=o.quality!=='Cleared'?'quality clearance is "'+o.quality+'"':!['Approved','Not Required'].includes(o.approval)?'client approval is "'+o.approval+'"':'',fu=o.nextFollowUp?diff(o.nextFollowUp,t):null;
+ if(un&&sd<0)H.push({m:'Shipment deadline '+show(o.shipDate)+' passed '+(-sd)+' day(s) ago and the order is not shipped.',a:'Confirm shipment status with Logistics and update the client.'});
+ if(dep&&ad!==null&&ad<0)H.push({m:what+' is overdue by '+(-ad)+' day(s)'+(blocked?' and production cannot proceed.':'.'),a:apr?'Contact the client today for an approval decision.':'Chase the sampling team and the client for the revised sample.'});
+ if(un&&sd>=0&&sd<=c.highShipDays&&gap)H.push({m:'Shipment is due in '+sd+' day(s) but '+gap+'.',a:'Confirm clearance with the responsible team before the deadline.'});
+ if(un&&o.pendingTask&&sd>=0&&sd<=c.highShipDays)H.push({m:'Pending task "'+o.pendingTask+'" is still open with the deadline in '+sd+' day(s).',a:'Confirm completion of "'+o.pendingTask+'" today.'});
+ if(o.priority==='High'&&fu!==null&&fu<0)H.push({m:'High-priority follow-up was due '+(-fu)+' day(s) ago.',a:'Complete the follow-up and record the outcome.'});
+ if(fu!==null&&fu<0&&o.priority!=='High')Md.push({m:'Follow-up is overdue by '+(-fu)+' day(s).',a:'Complete the follow-up and record the outcome.'});
+ if(fu!==null&&fu>=0&&fu<=c.followWarnDays)Md.push({m:'Follow-up is due '+(fu===0?'today':'in '+fu+' day(s)')+'.',a:'Prepare and complete the follow-up.'});
+ if(dep&&(ad===null||(ad>=0&&ad<=c.pendingDays)))Md.push({m:what+' is pending'+(ad===null?' (no deadline set).':' with '+ad+' day(s) left.'),a:apr?'Send a polite reminder to the client before the deadline.':'Coordinate the revision with the sampling team.'});
+ if(un&&sd>=0&&sd<=c.medShipDays&&gap)Md.push({m:'Shipment is due in '+sd+' day(s) and '+gap+'.',a:'Confirm clearance with the responsible team.'});
+ if(un&&o.pendingTask&&sd>=0&&sd<=c.medShipDays)Md.push({m:'Pending task "'+o.pendingTask+'" must finish before the deadline in '+sd+' day(s).',a:'Check progress on "'+o.pendingTask+'".'});
+ if(o.status==='On Hold'||o.shipment==='On Hold')Md.push({m:'On hold: '+(o.holdReason||'no reason recorded')+'.',a:'Find out whether the hold can be lifted.'});
+ const L1=H.length?H:Md.length?Md:null,level=H.length?'High':Md.length?'Medium':'Low';
+ if(L1)return{level,reason:level+' risk: '+L1.slice(0,2).map(x=>x.m).join(' '),action:L1[0].a,key:level+L1[0].m};
+ return{level:'Low',reason:'Low risk: progressing normally'+(dep&&ad!==null?'; '+what.toLowerCase()+' pending but '+ad+' day(s) remain.':un?'; next deadline '+dayTxt(o.shipDate)+'.':'.'),action:'Continue as planned.',key:'Low'}}
+
+/* ===== 2. INITIAL DEMONSTRATION DATA ===== */
+function seed(){
+ const t=today(),d=n=>addDays(t,n),at=(n,h)=>new Date(parse(d(n)).getTime()+(h||12)*36e5).toISOString();
+ const O=[],A=[],T=[];
+ const add=o=>{const x=Object.assign({},BLANK,o);O.push(x);A.push({id:uid('a'),orderId:x.id,at:at(parse(x.created)>0?diff(x.created,t):0),type:'Order created',text:'Demonstration order created.'})};
+ const act=(id,n,type,text)=>A.push({id:uid('a'),orderId:id,at:at(n,15),type,text});
+ add({id:'DEMO-001',client:'Crescent Home Textiles',product:'Printed cotton fabric',qty:4500,created:d(-21),shipDate:d(25),status:'In Progress',sample:'Sent to Client',approval:'Pending',production:'Awaiting Approval',quality:'Not Started',shipment:'Not Scheduled',owner:L.dept[0],priority:'High',sampleReq:d(-18),sampleDesc:'Printed cotton colourway strike-off',sentDate:d(-12),approvalDeadline:d(-5),pendingTask:'Client sample approval',nextAction:'Follow up with client for sample approval.',nextFollowUp:t,notes:'Client has not yet responded to the sample submission.'});
+ act('DEMO-001',-12,'Sample submitted','Printed cotton sample sent to the client for approval.');act('DEMO-001',-1,'Note','The client has not yet responded to the sample submission.');
+ add({id:'DEMO-002',client:'Meadow Living',product:'Embroidered cushion fabric',qty:1800,created:d(-20),shipDate:d(35),status:'In Progress',sample:'Revision Requested',approval:'Changes Requested',production:'Awaiting Sample Approval',quality:'Not Started',shipment:'Not Scheduled',owner:L.dept[1],priority:'Medium',sampleReq:d(-16),sampleDesc:'Embroidered cushion sample, first version',sentDate:d(-9),approvalDeadline:d(4),feedback:'Client comment (fictional): overall look is fine, but a design detail on the border needs revision.',requestedChanges:'Reduce the border motif size slightly and re-check thread colour against the reference.',pendingTask:'Revised embroidery border sample',nextAction:'Coordinate the requested sample changes with the sampling team.',nextFollowUp:d(2),notes:'Waiting for revised sample.'});
+ act('DEMO-002',-9,'Sample submitted','Embroidered sample sent to the client.');act('DEMO-002',-3,'Revision requested','Client (fictional) asked for a border design detail to be revised.');
+ add({id:'DEMO-003',client:'Urban Nest Interiors',product:'Woven upholstery fabric',qty:3200,created:d(-40),shipDate:d(4),status:'In Progress',sample:'Approved',approval:'Approved',production:'In Progress',quality:'Pending Clearance',shipment:'Scheduled',owner:L.dept[4],priority:'High',sampleReq:d(-35),sampleDesc:'Woven upholstery sample',sentDate:d(-30),approvalDate:d(-25),pendingTask:'Production completion and quality clearance',nextAction:'Confirm production completion and quality clearance with the responsible teams.',nextFollowUp:d(1),notes:'Quality clearance is outstanding and the shipment schedule needs to be checked.'});
+ act('DEMO-003',-25,'Approval recorded','Client approved the sample (demo).');act('DEMO-003',-1,'Note','Quality clearance is outstanding and the shipment schedule needs to be checked.');
+ add({id:'DEMO-004',client:'Willow & Weave Studio',product:'Cotton canvas, natural',qty:2500,created:d(-1),shipDate:d(50),status:'New',priority:'Low',pendingTask:'Confirm order details with client',nextAction:'Confirm order details and sample requirement with client.',nextFollowUp:d(2),notes:'Newly received order.'});
+ add({id:'DEMO-005',client:'Harbor Light Linens',product:'Yarn-dyed linen blend',qty:1200,created:d(-6),shipDate:d(40),status:'In Progress',sample:'In Preparation',approval:'Pending',production:'Awaiting Approval',owner:L.dept[1],sampleReq:d(-3),sampleDesc:'Yarn-dyed stripe sample',approvalDeadline:d(10),pendingTask:'Sample preparation',nextAction:'Check sample preparation progress with the sampling team.',nextFollowUp:d(3)});
+ add({id:'DEMO-006',client:'Saffron Road Interiors',product:'Jacquard curtain fabric',qty:2800,created:d(-30),shipDate:d(21),status:'In Progress',sample:'Approved',approval:'Approved',production:'In Progress',shipment:'Scheduled',owner:L.dept[3],approvalDate:d(-18),nextAction:'Request weekly production update.',nextFollowUp:d(5)});
+ add({id:'DEMO-007',client:'Northfield Hospitality Supply',product:'Poly-cotton bed sheeting',qty:6000,created:d(-35),shipDate:d(9),status:'In Progress',sample:'Approved',approval:'Approved',production:'Completed',quality:'Pending Clearance',shipment:'Awaiting Clearance',owner:L.dept[4],priority:'Medium',approvalDate:d(-22),pendingTask:'Quality inspection',nextAction:'Ask Quality for inspection date.',nextFollowUp:d(1),notes:'Awaiting quality inspection.'});
+ add({id:'DEMO-008',client:'Lakeview Home Co.',product:'Cotton twill, solid dyed',qty:3500,created:d(-60),shipDate:d(-10),status:'Completed',sample:'Approved',approval:'Approved',production:'Completed',quality:'Cleared',shipment:'Delivered',owner:L.dept[5],priority:'Low',approvalDate:d(-50),notes:'Delivered (demo record).'});
+ act('DEMO-008',-10,'Shipment status changed','Shipment marked Delivered (demo).');
+ add({id:'DEMO-009',client:'Orchard Lane Living',product:'Printed voile',qty:1500,created:d(-25),shipDate:d(30),status:'On Hold',sample:'Sent to Client',approval:'Pending',production:'On Hold',shipment:'On Hold',owner:L.dept[0],sentDate:d(-14),approvalDeadline:d(10),holdReason:'Client paused the order pending an internal design review (fictional).',nextAction:'Check with the client whether the design review is complete.',nextFollowUp:d(5)});
+ act('DEMO-009',-4,'Status updated','Order placed on hold at the client\'s request (demo).');
+ T.push({id:uid('t'),orderId:'DEMO-001',dept:L.dept[0],desc:'Chase client for sample approval',person:'Marketing Executive',created:d(-3),due:t,priority:'High',status:'Open',nextAction:'Call or email client contact',latestUpdate:'No reply received so far.'},
+ {id:uid('t'),orderId:'DEMO-002',dept:L.dept[1],desc:'Prepare revised embroidery border sample',person:'Sampling team lead',created:d(-3),due:d(5),priority:'Medium',status:'In Progress',nextAction:'Share revised sample date',latestUpdate:'Client feedback passed to sampling.'},
+ {id:uid('t'),orderId:'DEMO-003',dept:L.dept[4],desc:'Confirm inspection date and quality clearance',person:'Quality coordinator',created:d(-2),due:d(1),priority:'High',status:'Waiting for Information',nextAction:'Get inspection result',latestUpdate:'Inspection not yet confirmed.'},
+ {id:uid('t'),orderId:'DEMO-003',dept:L.dept[3],desc:'Confirm production completion',person:'Production planner',created:d(-2),due:d(1),priority:'High',status:'Open',nextAction:'Request completion confirmation',latestUpdate:''});
+ return{app:APP,version:VER,config:Object.assign({},CFGD),orders:O,tasks:T,activities:A}}
+
+/* ===== 3. DATA STORAGE AND BACKUP ===== */
+let S,view='dash',filt,corrupt=false;
+const defFilt=()=>({q:'',status:'',approval:'',dept:'',priority:'',risk:'',metric:'',rl:'',sort:'ship'});
+function banner(m){const b=document.getElementById('banner');b.textContent=m;b.hidden=false}
+function validate(d){const e=[];if(!d||typeof d!=='object'||Array.isArray(d))return['The file is not a valid backup.'];
+ if(d.app!==APP)e.push('This file is not a backup from this application.');if(d.version!==VER)e.push('Unsupported data version: '+d.version+'.');
+ for(const k of['orders','tasks','activities'])if(!Array.isArray(d[k]))e.push('The list "'+k+'" is missing.');
+ if(e.length)return e;const ids=new Set();
+ d.orders.forEach((o,i)=>{if(!o||typeof o!=='object'||typeof o.id!=='string'||!o.id){e.push('Order #'+(i+1)+' has no ID.');return}
+  const lc=o.id.toLowerCase();if(ids.has(lc))e.push('Duplicate order ID '+o.id+'.');ids.add(lc);
+  if(!o.client||typeof o.client!=='string')e.push('Order '+o.id+' has no client name.');
+  ['status','sample','approval','production','quality','shipment','priority'].forEach(k=>{if(!L[k].includes(o[k]))e.push('Order '+o.id+' has an invalid '+LBL[k]+'.')});
+  if(!L.dept.includes(o.owner))e.push('Order '+o.id+' has an invalid department.');
+  DATEKEYS.forEach(k=>{if(o[k]&&!isDate(o[k]))e.push('Order '+o.id+' has an invalid date in '+k+'.')})});
+ d.tasks.forEach(x=>{if(!x||!ids.has(String(x.orderId).toLowerCase()))e.push('A task refers to an unknown order.')});
+ d.activities.forEach(x=>{if(!x||!ids.has(String(x.orderId).toLowerCase()))e.push('An activity refers to an unknown order.')});
+ return e.slice(0,6)}
+const cfgOf=c=>{const r=Object.assign({},CFGD);if(c&&typeof c==='object')for(const k in CFGD){const n=Number(c[k]);if(Number.isInteger(n)&&n>=0&&n<=365)r[k]=n}return r};
+function norm(d){const cp=(o,B)=>{const r=Object.assign({},B);for(const k in B)if(o[k]!=null)r[k]=k==='qty'?Number(o[k])||0:String(o[k]);return r};
+ return{app:APP,version:VER,config:cfgOf(d.config),orders:d.orders.map(o=>cp(o,BLANK)),tasks:d.tasks.map(x=>Object.assign(cp(x,TB),{id:String(x.id||uid('t'))})),
+ activities:d.activities.map(a=>({id:String(a.id||uid('a')),orderId:String(a.orderId),at:String(a.at||new Date().toISOString()),type:String(a.type||''),text:String(a.text||'')}))}}
+function load(){let raw=null;
+ try{raw=localStorage.getItem(KEY)}catch(e){banner('Browser storage is unavailable, so changes cannot be kept after closing the page. Use Help & Data > Export backup (JSON) to keep your work.');return seed()}
+ if(!raw)return seed();
+ try{const d=JSON.parse(raw),e=validate(d);if(e.length)throw new Error(e[0]);return norm(d)}
+ catch(err){corrupt=true;try{localStorage.setItem(RECOVERY,raw)}catch(_){}
+  banner('Saved data could not be read ('+err.message+'). A recovery copy was kept in this browser under "'+RECOVERY+'". Demo data is shown; your next change will replace the main saved data.');return seed()}}
+function save(){const s=document.getElementById('saveState');
+ try{localStorage.setItem(KEY,JSON.stringify(S));s.textContent='✓ Saved '+new Date().toLocaleTimeString()}
+ catch(e){s.textContent='⚠ NOT saved to browser storage – export a JSON backup';banner('Changes could not be saved to browser storage ('+e.name+'). Export a JSON backup to avoid losing work.')}}
+function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1500)}
+function csv(rows){return rows.map(r=>r.map(c=>{c=c==null?'':String(c);if(/^[=+\-@]/.test(c))c="'"+c;return/[",\r\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c}).join(',')).join('\r\n')}
+function exportCsv(list){const h=[...OF.map(f=>f[1]),'Alerts'];
+ download('textile-orders-'+today()+'.csv','\ufeff'+csv([h,...list.map(o=>[...OF.map(f=>o[f[0]]),flags(o).reasons.join(' | ')])]),'text/csv;charset=utf-8')}
+
+/* ===== 5. ORDER AND TASK OPERATIONS ===== */
+const findO=id=>S.orders.find(o=>o.id===id);
+const log=(orderId,type,text)=>S.activities.push({id:uid('a'),orderId,at:new Date().toISOString(),type,text});
+function nextId(){let m=0;S.orders.forEach(o=>{const x=/^ORD-(\d+)$/i.exec(o.id);if(x)m=Math.max(m,+x[1])});return 'ORD-'+String(m+1).padStart(3,'0')}
+function update(o,v){const b=Object.assign({},o);Object.assign(o,v);let n=0;
+ TRACK.forEach(k=>{if(b[k]!==o[k]){n++;log(o.id,k==='shipment'?'Shipment status changed':'Status updated',LBL[k]+': "'+(b[k]||'—')+'" → "'+(o[k]||'—')+'".')}});return n}
+function commit(){save();render();notifyCheck()}
+function deleteOrder(o){S.orders=S.orders.filter(x=>x!==o);S.tasks=S.tasks.filter(t=>t.orderId!==o.id);S.activities=S.activities.filter(a=>a.orderId!==o.id);commit()}
+
+/* ===== 6. DASHBOARD CALCULATIONS ===== */
+function getFiltered(){const f=filt,q=f.q.toLowerCase();
+ const r=S.orders.filter(o=>{const fl=flags(o);
+  if(q&&![o.id,o.client,o.product].some(x=>x.toLowerCase().includes(q)))return false;
+  if(f.status&&o.status!==f.status)return false;if(f.approval&&o.approval!==f.approval)return false;
+  if(f.dept&&o.owner!==f.dept)return false;if(f.priority&&o.priority!==f.priority)return false;
+  if(f.risk==='risk'&&!fl.risk)return false;if(f.risk==='none'&&fl.risk)return false;
+  if(f.metric&&!M[f.metric][1](fl))return false;
+  if(f.rl){if(f.rl==='overdue'){if(!(fl.overdue||fl.late))return false}else if(f.rl==='completed'){if(fl.active)return false}else if(risk(o).level!==f.rl)return false}return true});
+ const idc=(a,b)=>a.id.localeCompare(b.id,undefined,{numeric:true}),sd=(a,b)=>(a.shipDate||'9').localeCompare(b.shipDate||'9');
+ r.sort({ship:sd,shipd:(a,b)=>sd(b,a),id:idc,idd:(a,b)=>idc(b,a),risk:(a,b)=>RK[risk(b).level]-RK[risk(a).level]||sd(a,b)}[f.sort]||sd);return r}
+
+/* ===== 7. RENDERING AND UI UPDATES ===== */
+function el(t,p,...k){const e=document.createElement(t);
+ for(const[a,v]of Object.entries(p||{})){if(a==='class')e.className=v;else if(a.startsWith('on'))e.addEventListener(a.slice(2),v);else if(v!==false&&v!=null)e.setAttribute(a,v===true?'':v)}
+ k.flat(2).forEach(c=>{if(c!=null&&c!==false)e.append(c)});return e}
+const btn=(l,fn,c)=>el('button',{type:'button',class:c||'',onclick:fn},l);
+const G=['Approved','Cleared','Completed','Delivered','Shipped','Ready for Shipment'],B=['Rejected','Rework Required','On Hold','Cancelled','High'],W=['Pending','Pending Clearance','Changes Requested','Revision Requested','Awaiting Approval','Awaiting Sample Approval','Awaiting Clearance','Waiting for Information','Resubmitted'];
+const bd=v=>el('span',{class:'b '+(G.includes(v)?'g':B.includes(v)?'r':W.includes(v)?'a':'n')},v);
+const table=(h,rows,empty)=>rows.length?el('div',{class:'tw'},el('table',{},el('thead',{},el('tr',{},h.map(x=>el('th',{scope:'col'},x)))),el('tbody',{},rows.map(r=>el('tr',{},r.map(c=>el('td',{},c))))))):el('p',{class:'empty'},empty||'Nothing to show.');
+const dlg=document.getElementById('dlg'),cfm=document.getElementById('cfm');
+function modal(title,...body){dlg.replaceChildren(el('div',{class:'dh'},el('h2',{id:'dttl'},title),el('button',{type:'button',class:'x','aria-label':'Close',onclick:()=>dlg.close()},'×')),el('div',{class:'db'},body));if(!dlg.open)dlg.showModal()}
+const closeDlg=()=>{if(dlg.open)dlg.close()};
+function ask(msg,yes,label){cfm.replaceChildren(el('div',{class:'db'},el('p',{},msg),el('div',{class:'row'},btn(label||'Confirm',()=>{cfm.close();yes()},'dng'),btn('Cancel',()=>cfm.close()))));cfm.showModal()}
+function go(v,f){view=v;if(f)filt=Object.assign(defFilt(),f);closeDlg();render();window.scrollTo(0,0)}
+const TABS=[['dash','Dashboard'],['orders','Order Tracker'],['samples','Samples & Approvals'],['tasks','Department Tasks'],['ship','Shipments'],['drafts','Message Drafts'],['help','Help & Data']];
+const rbadge=l=>el('span',{class:'b '+({High:'r',Medium:'a',Low:'g'}[l]||'n')},l==='Closed'?'Closed':l+' risk');
+function toast(m,bad){const t=document.getElementById('toast');t.textContent=m;t.className=bad?'bad':'';t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>{t.hidden=true},3500)}
+/* Excel-style inline editing: validate, auto-save, log, undo */
+const UNDO=[];
+function inlineErr(o,k,v){
+ if(k==='client'&&!v)return 'Client name cannot be empty.';
+ if(k==='qty'&&v&&!(Number.isInteger(Number(v))&&Number(v)>=0))return 'Quantity must be a whole number (0 or more).';
+ if(DATEKEYS.includes(k)&&v&&!isDate(v))return 'That is not a valid date.';
+ if(k==='shipDate'&&v&&o.created&&v<o.created)return 'Deadline cannot be before the order creation date ('+show(o.created)+').';
+ if(k==='shipment'){const g=guard({shipment:v,quality:o.quality});if(g)return g}
+ return ''}
+function applyEdit(o,k,v){const nv=k==='qty'?Number(v):v;if(TRACK.includes(k))update(o,{[k]:nv});else{const old=o[k];o[k]=nv;log(o.id,'Order edited',LBL[k]+': "'+(old||'—')+'" → "'+(v||'—')+'".')}}
+function cell(o,k,t,op,after){const i=t==='select'?el('select',{class:'ie','aria-label':LBL[k]+' for '+o.id},op.map(x=>el('option',{value:x},x))):el('input',{class:'ie',type:t,'aria-label':LBL[k]+' for '+o.id});
+ i.value=o[k]==null?'':o[k];let old=i.value;
+ i.addEventListener('keydown',e=>{if(e.key==='Escape'){i.value=old;i.blur()}});
+ i.addEventListener('change',()=>{const v=i.value.trim(),er=inlineErr(o,k,v);if(er){toast(er,1);i.value=old;return}
+  UNDO.push({id:o.id,k,old:o[k]});if(UNDO.length>30)UNDO.shift();applyEdit(o,k,v);old=v;save();if(after)after();notifyCheck();toast('Saved: '+LBL[k]+' for '+o.id)});
+ return i}
+function undo(fill){const u=UNDO.pop();if(!u)return toast('Nothing to undo.');const o=findO(u.id);if(!o)return toast('That order no longer exists.',1);applyEdit(o,u.k,String(u.old==null?'':u.old));save();fill();toast('Undone: '+LBL[u.k]+' for '+u.id)}
+function confirmDelete(o){const nt=S.tasks.filter(t=>t.orderId===o.id).length,na=S.activities.filter(a=>a.orderId===o.id).length;
+ ask('Delete order '+o.id+'? This also permanently deletes its '+nt+' task(s) and '+na+' activity record(s). Export a backup first if unsure.',()=>deleteOrder(o),'Delete order')}
+/* Reminders: one entry per order per section (no duplicates) */
+function reminders(){const t=today(),act=S.orders.filter(o=>flags(o).active).map(o=>({o,r:risk(o),f:flags(o)})),Z={};
+ const mk=(x,date,dl,reason,task)=>({o:x.o,date,dl,reason:reason||x.r.reason,task:task||x.o.pendingTask});
+ Z.today=act.filter(x=>x.o.nextFollowUp===t).map(x=>mk(x,t,'Follow-up date','Follow-up is due today. '+x.r.reason));
+ Z.high=act.filter(x=>x.r.level==='High').map(x=>mk(x,x.o.shipDate||x.o.approvalDeadline||x.o.nextFollowUp,'Deadline'));
+ const od=new Map();
+ act.forEach(x=>{const rs=x.f.reasons.filter(m=>/overdue|was due|delayed/i.test(m));if(rs.length)od.set(x.o.id,{x,rs,d:[x.o.nextFollowUp,x.o.approvalDeadline,x.o.shipDate].filter(d=>d&&d<t).sort()[0]})});
+ S.tasks.forEach(k=>{if(['Completed','Cancelled'].includes(k.status)||!k.due||k.due>=t)return;const x=act.find(a=>a.o.id===k.orderId);if(!x)return;
+  const e=od.get(x.o.id)||{x,rs:[],d:k.due};e.rs.push('Department task "'+k.desc+'" ('+k.dept+') overdue since '+show(k.due)+'.');if(k.due<e.d)e.d=k.due;od.set(x.o.id,e)});
+ Z.over=[...od.values()].map(e=>mk(e.x,e.d,'Overdue since',e.rs.join(' ')));
+ Z.up=act.filter(x=>!shipped(x.o)).map(x=>{const c=[];if(x.o.shipDate&&x.o.shipDate>=t&&diff(x.o.shipDate,t)<=14)c.push([x.o.shipDate,'Shipment deadline']);
+  if(x.o.approval==='Pending'&&x.o.approvalDeadline&&x.o.approvalDeadline>=t&&diff(x.o.approvalDeadline,t)<=7)c.push([x.o.approvalDeadline,'Approval deadline']);c.sort();return c.length?mk(x,c[0][0],c[0][1]):null}).filter(Boolean).sort((a,b)=>a.date.localeCompare(b.date));
+ Z.pending=act.filter(x=>x.o.pendingTask||x.o.approval==='Pending'||x.f.revision).sort((a,b)=>RK[b.r.level]-RK[a.r.level]).map(x=>mk(x,x.o.shipDate||x.o.approvalDeadline,'Deadline',null,x.o.pendingTask||(x.o.approval==='Pending'?'Client approval':'Revised sample')));
+ return Z}
+function remItem(it){const o=it.o,r=risk(o);
+ return el('div',{class:'att rk-'+r.level},el('div',{class:'ah'},btn(o.id+' — '+o.client,()=>showDetail(o.id),'lnk'),rbadge(r.level)),
+  el('p',{class:'na'},el('strong',{},'Pending task: '),it.task||'—','   |   '+it.dl+': '+show(it.date)),el('p',{class:'na'},it.reason),
+  el('p',{class:'na'},el('strong',{},'Recommended next action: '),o.nextAction||r.action),
+  el('div',{class:'row'},btn('Open & update',()=>showDetail(o.id)),btn('Record follow-up',()=>followUp(o)),btn('Find in table',()=>go('orders',{q:o.id}))))}
+function remBar(){const R=reminders();return el('section',{class:'panel'},el('strong',{},R.high.length+' high-risk | '+R.today.length+' follow-up(s) today | '+R.over.length+' order(s) with overdue items'),' ',
+ el('span',{class:'mut'},notifState()),' ',canN()&&Notification.permission==='default'?btn('Enable notifications',askNotif,'pri'):null)}
+function remSections(){const R=reminders();return el('div',{},[['today',"Today's follow-ups"],['high','High-risk orders'],['over','Overdue tasks'],['up','Upcoming deadlines (next 14 days)'],['pending','Pending orders']].map(([k,n])=>
+ el('details',{class:'panel',open:k!=='pending'},el('summary',{},n+' ('+R[k].length+')'),R[k].length?R[k].map(remItem):el('p',{class:'empty'},'Nothing here right now.'))))}
+/* Browser notifications (only while the page is open; falls back to in-app alerts) */
+const canN=()=>typeof Notification!=='undefined';
+function notifState(){return!canN()?'Browser notifications are unavailable here; in-app alerts only.':Notification.permission==='granted'?'Browser notifications on (only while this page is open).':Notification.permission==='denied'?'Notifications are blocked in the browser; in-app alerts only.':'Browser notifications are off.'}
+function askNotif(){try{Promise.resolve(Notification.requestPermission()).then(()=>{notifyCheck();render()},()=>toast('Notifications could not be enabled; in-app alerts still work.',1))}catch(e){toast('Notifications could not be enabled; in-app alerts still work.',1)}}
+function notifyCheck(){try{if(!canN()||Notification.permission!=='granted')return;const t=today();let sent={};try{sent=JSON.parse(localStorage.getItem('tocs_notified')||'{}')}catch(e){}
+ Object.keys(sent).forEach(k=>{if(!k.endsWith('|'+t))delete sent[k]});const R=reminders(),kk=(c,i)=>c+i.o.id+'|'+risk(i.o).key+'|'+t,
+ items=[...R.high.map(i=>['H',i]),...R.today.map(i=>['T',i])].filter(([c,i])=>!sent[kk(c,i)]).slice(0,4);
+ items.forEach(([c,i])=>{new Notification((c==='H'?'High risk: ':'Follow-up today: ')+i.o.id+' '+i.o.client,{body:i.reason.slice(0,180),tag:c+i.o.id});sent[kk(c,i)]=1});
+ localStorage.setItem('tocs_notified',JSON.stringify(sent))}catch(e){}}
+function riskPanel(){const F=[['highShipDays','HIGH: shipment due within this many days with quality or approval incomplete'],['medShipDays','MEDIUM: same condition, shipment due within this many days'],['followWarnDays','MEDIUM: follow-up due within this many days'],['pendingDays','MEDIUM: approval or sample deadline within this many days (later deadlines stay LOW)']],inp={},msg=el('span',{class:'mut',role:'status'});
+ return el('section',{class:'panel'},el('h2',{},'Risk rules (editable)'),el('p',{class:'mut'},'HIGH also applies when a shipment, approval or sample deadline has passed, or a High-priority follow-up is overdue. Priority is your manual setting; risk is calculated from dates and pending items.'),
+  el('div',{class:'grid'},F.map(([k,l])=>{inp[k]=el('input',{type:'number',min:0,max:365,id:'c_'+k});inp[k].value=S.config[k];return el('div',{class:'fld'},el('label',{for:'c_'+k},l),inp[k])})),
+  el('div',{class:'row'},btn('Save risk rules',()=>{const n={};for(const[k]of F){const v=inp[k].value.trim();if(!/^\d+$/.test(v)||+v>365){msg.textContent='Use whole numbers from 0 to 365.';return}n[k]=+v}
+   if(n.highShipDays>n.medShipDays){msg.textContent='The HIGH window cannot be longer than the MEDIUM window.';return}S.config=n;commit()},'pri'),btn('Restore defaults',()=>{S.config=Object.assign({},CFGD);commit()}),msg))}
+const V={};
+V.dash=()=>{const rows=S.orders.map(o=>[o,flags(o)]),pr={High:0,Medium:1,Low:2};
+ const cards=el('div',{class:'cards'},Object.entries(M).map(([k,m])=>el('button',{type:'button',class:'card '+k,onclick:()=>go('orders',{metric:k})},el('span',{class:'n'},rows.filter(r=>m[1](r[1])).length),el('strong',{},m[0]),el('small',{},m[2]))));
+ const att=rows.filter(r=>r[1].active&&r[1].reasons.length).sort((a,b)=>pr[a[0].priority]-pr[b[0].priority]||a[0].id.localeCompare(b[0].id));
+ const up=rows.filter(r=>r[1].active&&!shipped(r[0])&&r[0].shipDate&&diff(r[0].shipDate,today())<=14).sort((a,b)=>a[0].shipDate.localeCompare(b[0].shipDate));
+ const rec=[...S.activities].sort((a,b)=>b.at.localeCompare(a.at)).slice(0,8);
+ return el('div',{},remBar(),cards,remSections(),el('div',{class:'cols'},
+  el('section',{class:'panel'},el('h2',{},'Attention required ('+att.length+')'),
+   att.length?att.map(([o,f])=>el('div',{class:'att'},el('div',{class:'ah'},btn(o.id+' — '+o.client,()=>showDetail(o.id),'lnk'),bd(o.priority)),el('ul',{},f.reasons.map(r=>el('li',{},r))),
+    el('p',{class:'na'},el('strong',{},'Next action: '),o.nextAction||'Not set','  (follow-up date: '+show(o.nextFollowUp)+')'),el('div',{class:'row'},btn('Record follow-up',()=>followUp(o)),btn('Open order',()=>showDetail(o.id))))):el('p',{class:'empty'},'No orders need attention right now.')),
+  el('div',{},el('section',{class:'panel'},el('h2',{},'Upcoming shipment deadlines (next 14 days and overdue)'),
+   table(['Order','Client','Required date','Shipment'],up.map(([o])=>[btn(o.id,()=>showDetail(o.id),'lnk'),o.client,show(o.shipDate)+' ('+dayTxt(o.shipDate)+')',bd(o.shipment)]),'No shipment deadlines in this period.')),
+   el('section',{class:'panel'},el('h2',{},'Recent activity'),table(['When','Order','Activity'],rec.map(a=>[new Date(a.at).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'}),a.orderId,a.type+': '+a.text]),'No activity yet.')))))};
+V.orders=()=>{const f=filt,tbl=el('div',{id:'ordtbl'});
+ const mk=(k,l,opts,noAll)=>{const s=el('select',{'aria-label':l,onchange:e=>{f[k]=e.target.value;fill()}},noAll?null:el('option',{value:''},l+': all'),opts.map(o=>Array.isArray(o)?el('option',{value:o[0]},o[1]):el('option',{value:o},o)));s.value=f[k];return s};
+ function fill(){const r=getFiltered();
+  tbl.replaceChildren(el('p',{class:'mut'},r.length+' of '+S.orders.length+' orders shown. Click a cell to edit it: changes save automatically; press Esc to cancel a cell edit; use Undo last edit to reverse a saved one.'),
+   f.metric?el('p',{},el('span',{class:'b a'},'Dashboard filter: '+M[f.metric][0]),' ',btn('Clear this filter',()=>{f.metric='';render()})):null,
+   table(['Order','Client','Product','Qty','Status','Approval','Shipment','Pending task','Deadline (ship by)','Next follow-up','Priority (manual)','Risk (calculated)','Why','Next action','Notes',''],r.map(o=>{
+    const rk=el('span'),rs=el('span'),upd=()=>{const x=risk(o);rk.replaceChildren(rbadge(x.level));rs.replaceChildren(x.reason)};upd();const c=(k,t,op)=>cell(o,k,t,op,upd);
+    return[btn(o.id,()=>showDetail(o.id),'lnk'),c('client','text'),c('product','text'),c('qty','number'),c('status','select',L.status),c('approval','select',L.approval),c('shipment','select',L.shipment),c('pendingTask','text'),c('shipDate','date'),c('nextFollowUp','date'),c('priority','select',L.priority),rk,rs,c('nextAction','text'),c('notes','text'),
+     el('div',{class:'row'},btn('Edit',()=>orderForm(o)),btn('Delete',()=>confirmDelete(o),'dng'))]}),'No orders match. Change or clear the filters, or add an order.'))}
+ const q=el('input',{type:'search',placeholder:'Search ID, client or product','aria-label':'Search',oninput:e=>{f.q=e.target.value;fill()}});q.value=f.q;
+ const bar=el('div',{class:'bar'},q,mk('status','Status',L.status),mk('approval','Approval',L.approval),mk('dept','Department',L.dept),mk('priority','Priority',L.priority),
+  mk('rl','Risk level',[['High','High risk'],['Medium','Medium risk'],['Low','Low risk'],['overdue','Overdue'],['completed','Completed / cancelled']]),mk('risk','Shipment risk',[['risk','At risk or delayed'],['none','No risk']]),mk('sort','Sort',[['risk','Highest risk first'],['ship','Ship date ↑'],['shipd','Ship date ↓'],['id','Order ID ↑'],['idd','Order ID ↓']],1),
+  btn('Clear filters',()=>{filt=defFilt();render()}),btn('Undo last edit',()=>undo(fill)),btn('+ Add order',()=>orderForm(null),'pri'),btn('Export shown orders (CSV)',()=>exportCsv(getFiltered())));
+ fill();return el('div',{},bar,el('section',{class:'panel'},tbl))};
+V.samples=()=>{const list=S.orders.filter(o=>o.status!=='Cancelled'&&(o.sample!=='Not Requested'||o.approval!=='Not Required'));
+ return el('section',{class:'panel'},el('h2',{},'Samples and client approvals'),el('p',{class:'mut'},'A sample is never approved automatically: record the client\'s decision with "Update". Resubmitting a revised sample sets approval back to Pending.'),
+  table(['Order','Sample','Approval','Requested','Sent','Approval deadline','Revised / approved','Feedback & requested changes','Next follow-up',''],list.map(o=>{const f=flags(o);
+   return[el('span',{},btn(o.id,()=>showDetail(o.id),'lnk'),el('br'),o.client),bd(o.sample),bd(o.approval),show(o.sampleReq),show(o.sentDate),
+    el('span',{},show(o.approvalDeadline),f.overdue&&o.approval==='Pending'&&o.approvalDeadline<today()?el('span',{class:'flag'},' OVERDUE'):''),
+    'Revised: '+show(o.revisedDate)+' / Approved: '+show(o.approvalDate),el('span',{},o.feedback||'—',o.requestedChanges?el('div',{},el('strong',{},'Changes: '),o.requestedChanges):''),show(o.nextFollowUp),
+    el('div',{class:'row'},btn('Update',()=>sampleForm(o)),btn('Resubmit',()=>resubmitForm(o)),btn('Follow-up',()=>followUp(o)))]}),'No sample or approval records.'))};
+V.tasks=()=>{const tf=V.tf||(V.tf={dept:'',status:''}),tbl=el('div',{});
+ const mk=(k,l,o)=>{const s=el('select',{'aria-label':l,onchange:e=>{tf[k]=e.target.value;fill()}},el('option',{value:''},l+': all'),o.map(x=>el('option',{value:x},x)));s.value=tf[k];return s};
+ function fill(){const r=S.tasks.filter(t=>(!tf.dept||t.dept===tf.dept)&&(!tf.status||t.status===tf.status)).sort((a,b)=>a.due.localeCompare(b.due));
+  tbl.replaceChildren(table(['Order','Department','Task / issue','Responsible','Due','Priority','Status','Next action / latest update',''],r.map(t=>{const od=!['Completed','Cancelled'].includes(t.status)&&t.due<today();
+   return[t.orderId,t.dept,t.desc,t.person,el('span',{class:od?'flag':''},show(t.due)+(od?' (overdue)':'')),bd(t.priority),bd(t.status),el('span',{},t.nextAction||'—',el('div',{class:'mut'},t.latestUpdate)),btn('Edit',()=>taskForm(t,null))]}),'No tasks match.'))}
+ fill();return el('section',{class:'panel'},el('h2',{},'Department coordination tasks'),el('p',{class:'mut'},'These records only track what you enter. Nothing is sent to any department.'),
+  el('div',{class:'bar'},mk('dept','Department',L.dept),mk('status','Status',L.task),btn('+ Add task',()=>taskForm(null,null),'pri')),tbl)};
+V.ship=()=>{const t=today(),A=S.orders.map(o=>[o,flags(o)]).filter(r=>r[1].active&&!shipped(r[0]));
+ const cols=['Order','Client','Required date','Shipment','Quality','Why flagged / next action',''];
+ const row=([o,f])=>[btn(o.id,()=>showDetail(o.id),'lnk'),o.client,o.shipDate?show(o.shipDate)+' ('+dayTxt(o.shipDate)+')':'—',bd(o.shipment),bd(o.quality),el('span',{},f.reasons.join(' ')||'No alerts.',el('div',{class:'mut'},'Next: '+(o.nextAction||'not set'))),btn('Update shipment',()=>shipForm(o))];
+ const sec=(h,d,l)=>el('section',{class:'panel'},el('h2',{},h+' ('+l.length+')'),el('p',{class:'mut'},d),table(cols,l.map(row),'None.'));
+ return el('div',{},
+  sec('Overdue shipments','Required date has passed and the order is not marked Shipped. Status is never changed automatically.',A.filter(r=>r[1].late)),
+  sec('Due soon','Required date within the next '+DUE_SOON+' days.',A.filter(r=>r[1].due)),
+  sec('At risk','Not yet late, but quality or approval is incomplete close to the deadline.',A.filter(r=>r[1].risk&&!r[1].late)),
+  sec('Awaiting quality clearance','Quality status is Pending Clearance or shipment is Awaiting Clearance.',A.filter(r=>r[0].quality==='Pending Clearance'||r[0].shipment==='Awaiting Clearance')),
+  sec('Cannot yet be Ready for Shipment','Scheduled or awaiting clearance, but quality is not "Cleared".',A.filter(r=>['Scheduled','Awaiting Clearance'].includes(r[0].shipment)&&r[0].quality!=='Cleared')),
+  sec('On hold','Reason and next action are shown where recorded.',A.filter(r=>r[0].shipment==='On Hold'||r[0].status==='On Hold')),
+  sec('Completed shipments','Marked Shipped or Delivered.',S.orders.filter(shipped).map(o=>[o,flags(o)])))};
+const DT={approval:'Client approval reminder',revision:'Sample revision follow-up',production:'Internal production-status request',quality:'Quality-clearance follow-up',shipment:'Shipment-status update'};
+function draft(type,o){const P=(s,p)=>s||'['+p+']',D=(s,p)=>s?show(s):'['+p+']',ID=o.id+' ('+o.product+')',sig='\n\nKind regards,\n[Your name]\n[Your designation]';
+ return{approval:'Subject: Sample approval follow-up – '+o.id+'\n\nDear '+o.client+' team,\n\nI hope you are well. I am following up on the sample for order '+ID+', sent to you on '+D(o.sentDate,'ADD DATE SENT')+'. We would appreciate your approval or feedback'+(o.approvalDeadline?' by '+show(o.approvalDeadline):' at your earliest convenience')+' so that the order schedule is not affected.\n\nPlease let me know if you need anything further from our side.'+sig,
+ revision:'Subject: Revised sample – order '+o.id+'\n\nDear '+o.client+' team,\n\nThank you for your feedback on the sample for order '+ID+'. As requested, the following change is being coordinated: '+P(o.requestedChanges,'ADD REQUESTED CHANGES')+'.\n\nWe expect to send the revised sample on '+D(o.revisedDate,'ADD CONFIRMED DATE')+'. I will confirm once it has been dispatched.'+sig,
+ production:'Subject: Production status request – '+o.id+'\n\nDear Production team,\n\nCould you please share the current production status for order '+ID+', quantity '+o.qty.toLocaleString()+' m, required shipment date '+D(o.shipDate,'ADD DATE')+'?\n\nPlease confirm: (1) current stage, (2) expected completion date, and (3) any issues that could affect the schedule.'+sig,
+ quality:'Subject: Quality clearance follow-up – '+o.id+'\n\nDear Quality team,\n\nOrder '+ID+' is scheduled for shipment on '+D(o.shipDate,'ADD DATE')+'. The recorded quality status is "'+o.quality+'". Could you please confirm the inspection date and whether quality clearance can be given?\n\nThis will allow us to confirm the shipment schedule with the client.'+sig,
+ shipment:'Subject: Shipment update – order '+o.id+'\n\nDear '+o.client+' team,\n\nI am writing with an update on order '+ID+'. The required shipment date is '+D(o.shipDate,'ADD DATE')+' and the current shipment status is "'+o.shipment+'". Confirmed dispatch date: ['+'ADD CONFIRMED DATE IF AVAILABLE].\n\nI will keep you informed of any change.'+sig}[type]}
+V.drafts=()=>{if(!S.orders.length)return el('p',{class:'empty'},'Add an order first.');
+ const os=el('select',{'aria-label':'Order',onchange:gen},S.orders.map(o=>el('option',{value:o.id},o.id+' – '+o.client))),
+ ts=el('select',{'aria-label':'Draft type',onchange:gen},Object.entries(DT).map(([k,v])=>el('option',{value:k},v))),
+ ta=el('textarea',{class:'draft','aria-label':'Draft text'}),msg=el('span',{class:'mut',role:'status'});
+ if(V.dOrder&&findO(V.dOrder))os.value=V.dOrder;
+ function gen(){V.dOrder=os.value;ta.value=draft(ts.value,findO(os.value));msg.textContent=''}
+ gen();return el('section',{class:'panel'},el('h2',{},'Message drafts'),el('p',{class:'mut'},'Drafts use saved order details. Text in [BRACKETS] must be completed by you. Nothing is sent automatically; edit the text, then copy it.'),
+  el('div',{class:'bar'},os,ts,btn('Copy to clipboard',async()=>{try{await navigator.clipboard.writeText(ta.value);msg.textContent='Copied.'}catch(e){ta.select();let ok=false;try{ok=document.execCommand('copy')}catch(_){}msg.textContent=ok?'Copied.':'Text selected – press Ctrl+C to copy.'}},'pri'),msg),ta)};
+V.help=()=>{const imp=el('input',{type:'file',accept:'.json,application/json','aria-label':'Choose backup file',onchange:e=>{const fl=e.target.files[0];if(!fl)return;const r=new FileReader();
+  r.onload=()=>{let d;try{d=JSON.parse(r.result)}catch(x){imp.value='';return modal('Import failed',el('p',{},'This file is not valid JSON. Your existing data was not changed.'))}
+   const er=validate(d);imp.value='';if(er.length)return modal('Import failed',el('p',{},'Your existing data was not changed. Problems found:'),el('ul',{},er.map(x=>el('li',{},x))));
+   ask('Replace ALL current data with this backup ('+d.orders.length+' orders, '+d.tasks.length+' tasks)? This cannot be undone.',()=>{S=norm(d);commit()},'Replace data')};
+  r.onerror=()=>modal('Import failed',el('p',{},'The file could not be read.'));r.readAsText(fl)}});
+ return el('div',{},el('section',{class:'panel'},el('h2',{},'Data: backup, restore, reset'),
+  el('p',{class:'mut'},'Data is stored only in this browser on this device (localStorage). It is not synchronised anywhere and can be lost if browser data is cleared. Export a backup regularly.'),
+  el('div',{class:'bar'},btn('Export backup (JSON)',()=>download('textile-order-backup-'+today()+'.json',JSON.stringify(S,null,2),'application/json'),'pri'),
+  el('label',{},'Restore from backup: ',imp),btn('Export all orders (CSV)',()=>exportCsv(S.orders)),btn('Reset demo data',()=>ask('Reset to the original fictional demonstration data? All your changes, new orders, tasks and history will be lost.',()=>{S=seed();filt=defFilt();commit()},'Reset demo data'),'dng'))),
+  riskPanel(),el('section',{class:'panel'},el('h2',{},'How to use'),el('ol',{},['Dashboard: click a number to see the matching orders. "Attention required" explains why each order is flagged.','Order Tracker: search, filter, sort, add or edit orders. Click an order ID to see details, tasks and history.','Samples & Approvals: record client feedback, update approval, or resubmit a revised sample.','Department Tasks: record internal tasks per order (records only, nothing is sent).','Shipments: update shipment and quality status. Ready for Shipment needs quality "Cleared".','Message Drafts: generate editable text, complete the [BRACKETS], copy it.'].map(x=>el('li',{},x)))),
+  el('section',{class:'panel'},el('h2',{},'Dashboard metrics and business rules'),el('ul',{},Object.values(M).map(m=>el('li',{},el('strong',{},m[0]+': '),m[2])),
+   el('li',{},'Active excludes Completed, Cancelled and Delivered orders; those never raise alerts.'),el('li',{},'Approval is overdue only if still Pending and its deadline is before today.'),
+   el('li',{},'Passing a shipment date never changes the status to Shipped; it is shown as "delayed".'),el('li',{},'Shipments cannot be set Ready for Shipment, Shipped or Delivered unless quality is Cleared.'),
+   el('li',{},'Risk (High/Medium/Low) is calculated from dates and pending items; Priority is your own setting. Completed, cancelled and delivered orders show no risk.'),el('li',{},'Browser notifications work only while this page is open, and Chrome may block them for files opened from disk. In-app alerts always work.'),el('li',{},'Dates are calendar dates in your local time; alerts are recalculated each time the page is shown or data changes.'))))};
+function render(){document.querySelectorAll('#nav button').forEach(b=>b.toggleAttribute('aria-current',b.dataset.v===view)&&b.setAttribute('aria-current','page'));
+ document.querySelectorAll('#nav button').forEach(b=>{if(b.dataset.v!==view)b.removeAttribute('aria-current')});document.getElementById('app').replaceChildren(V[view]())}
+function showDetail(id){const o=findO(id);if(!o)return;const f=flags(o),all=[...OF,...SF.filter(s=>!OF.some(x=>x[0]===s[0]))];
+ const val=([k,l,t])=>t==='date'?show(o[k]):t==='select'?bd(o[k]):k==='qty'?o.qty.toLocaleString():o[k]||'—';
+ modal(o.id+' — '+o.client,
+  f.reasons.length?el('div',{class:'att'},el('strong',{},'Why this order is flagged'),el('ul',{},f.reasons.map(r=>el('li',{},r)))):null,
+  el('div',{class:'row'},btn('Edit order',()=>orderForm(o),'pri'),btn('Record follow-up',()=>followUp(o)),btn('Update sample',()=>sampleForm(o)),btn('Resubmit sample',()=>resubmitForm(o)),btn('Update shipment',()=>shipForm(o)),btn('Add task',()=>taskForm(null,o.id)),
+   btn('Draft message',()=>{V.dOrder=o.id;go('drafts')}),btn('Delete order',()=>{const nt=S.tasks.filter(t=>t.orderId===o.id).length,na=S.activities.filter(a=>a.orderId===o.id).length;
+    ask('Delete order '+o.id+'? This also permanently deletes its '+nt+' task(s) and '+na+' activity record(s). Export a backup first if unsure.',()=>{closeDlg();deleteOrder(o)},'Delete order')},'dng')),
+  el('h2',{style:'margin-top:14px'},'Details'),el('dl',{},all.map(x=>[el('dt',{},x[1]),el('dd',{},val(x))])),
+  el('h2',{style:'margin-top:14px'},'Department tasks'),table(['Department','Task','Due','Status',''],S.tasks.filter(t=>t.orderId===o.id).map(t=>[t.dept,t.desc,show(t.due),bd(t.status),btn('Edit',()=>taskForm(t,null))]),'No tasks recorded.'),
+  el('h2',{style:'margin-top:14px'},'Activity history'),table(['When','Type','Description'],S.activities.filter(a=>a.orderId===o.id).sort((a,b)=>b.at.localeCompare(a.at)).map(a=>[new Date(a.at).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'}),a.type,a.text]),'No activity.'))}
+
+/* ===== 8. FORM VALIDATION ===== */
+function formFor(fields,data,o){const form=el('form',{novalidate:true}),grid=el('div',{class:'grid'}),inp={},eb=el('div',{class:'err',role:'alert',hidden:true});let busy=false;
+ fields.forEach(([k,l,t,opts,req])=>{const id='f_'+k;
+  const i=t==='select'?el('select',{id},opts.map(x=>el('option',{value:x},x))):t==='textarea'?el('textarea',{id,rows:2}):el('input',{id,type:t});
+  if(t==='number'){i.min=1;i.step=1}i.value=data[k]==null?'':data[k];if((o.readonly||[]).includes(k))i.readOnly=true;inp[k]=i;
+  grid.append(el('div',{class:'fld'+(t==='textarea'?' wide':'')},el('label',{for:id},l+(req?' *':'')),i))});
+ form.addEventListener('submit',ev=>{ev.preventDefault();if(busy)return;const v={};for(const k in inp)v[k]=inp[k].value.trim();const er=o.validate(v);
+  if(er.length){eb.hidden=false;eb.replaceChildren(el('strong',{},'Not saved. Please fix:'),el('ul',{},er.map(x=>el('li',{},x))));eb.scrollIntoView({block:'nearest'});return}
+  busy=true;if(o.onSave(v)===false)busy=false});
+ form.append(grid,eb,el('div',{class:'row'},el('button',{type:'submit',class:'pri'},o.label||'Save changes'),btn('Cancel without saving',closeDlg)));return form}
+const reqErr=(fields,v)=>fields.filter(f=>f[4]&&!v[f[0]]).map(f=>f[1]+' is required.');
+const dateErr=(fields,v)=>fields.filter(f=>f[2]==='date'&&v[f[0]]&&!isDate(v[f[0]])).map(f=>f[1]+' is not a valid date.');
+function orderForm(o){const isNew=!o;
+ modal(isNew?'Add order':'Edit order '+o.id,formFor(OF,isNew?Object.assign({},BLANK,{id:nextId(),created:today(),qty:''}):o,{readonly:isNew?[]:['id'],label:isNew?'Add order':'Save changes',
+  validate:v=>{const e=[...reqErr(OF,v),...dateErr(OF,v)];
+   if(v.id&&S.orders.some(x=>x!==o&&x.id.toLowerCase()===v.id.toLowerCase()))e.push('Order ID "'+v.id+'" already exists. Use a different ID.');
+   if(v.qty&&!(Number(v.qty)>=0&&Number.isInteger(Number(v.qty))))e.push('Quantity must be a whole number (0 or more).');
+   if(isDate(v.created)&&isDate(v.shipDate)&&v.shipDate<v.created)e.push('Required shipment date cannot be before the order creation date.');
+   if((v.status==='On Hold'||v.shipment==='On Hold')&&!v.holdReason)e.push('Enter a hold reason when the order or shipment is On Hold.');
+   const g=guard(v);if(g)e.push(g);return e},
+  onSave:v=>{v.qty=Number(v.qty);if(isNew){S.orders.push(Object.assign({},BLANK,v));log(v.id,'Order created','Order created for '+v.client+' ('+v.product+').')}
+   else if(!update(o,v))log(o.id,'Order edited','Order details edited.');closeDlg();commit()}}))}
+function sampleForm(o){modal('Sample & approval – '+o.id,formFor(SF,o,{label:'Save sample details',
+ validate:v=>{const e=[...reqErr(SF,v),...dateErr(SF,v)];
+  if((v.sample==='Revision Requested'||v.approval==='Changes Requested')&&!v.requestedChanges)e.push('Record the requested changes / revision reason.');
+  if(v.sample==='Approved'&&!['Approved','Not Required'].includes(v.approval))e.push('Sample status "Approved" needs Client approval status "Approved". Set both once the client confirms.');return e},
+ onSave:v=>{if(v.approval==='Approved'&&!v.approvalDate)v.approvalDate=today();const pa=o.approval,ps=o.sample;
+  if(!update(o,v))log(o.id,'Sample updated','Sample details updated.');
+  if(v.sample==='Revision Requested'&&ps!==v.sample)log(o.id,'Revision requested',v.requestedChanges);
+  if(v.approval==='Approved'&&pa!=='Approved')log(o.id,'Approval recorded','Client approval recorded on '+show(v.approvalDate)+'.');closeDlg();commit()}}))}
+function resubmitForm(o){const F=[['revisedDate','Resubmission date','date','',1],['sampleDesc','What was changed in the revised sample','textarea','',1],['approvalDeadline','New client approval deadline','date'],['nextFollowUp','Next follow-up date','date']];
+ modal('Record sample resubmission – '+o.id,formFor(F,{revisedDate:today(),sampleDesc:'',approvalDeadline:'',nextFollowUp:''},{label:'Record resubmission',validate:v=>[...reqErr(F,v),...dateErr(F,v)],
+ onSave:v=>{Object.assign(o,{sample:'Resubmitted',approval:'Pending',revisedDate:v.revisedDate,sentDate:v.revisedDate,sampleDesc:v.sampleDesc,approvalDeadline:v.approvalDeadline,nextFollowUp:v.nextFollowUp});
+  log(o.id,'Sample submitted','Revised sample sent on '+show(v.revisedDate)+': '+v.sampleDesc+' Approval is now Pending.');closeDlg();commit()}}))}
+function followUp(o){const F=[['date','Follow-up date','date','',1],['outcome','Outcome of the follow-up','textarea','',1],['nextAction','Next action','text'],['nextFollowUp','Next follow-up date (leave empty if none)','date']];
+ modal('Record follow-up – '+o.id,formFor(F,{date:today(),outcome:'',nextAction:o.nextAction,nextFollowUp:''},{label:'Save follow-up',
+ validate:v=>{const e=[...reqErr(F,v),...dateErr(F,v)];if(isDate(v.date)&&isDate(v.nextFollowUp)&&v.nextFollowUp<v.date)e.push('Next follow-up date cannot be before the follow-up date.');return e},
+ onSave:v=>{o.lastFollowUp=v.date;o.nextFollowUp=v.nextFollowUp;o.nextAction=v.nextAction;log(o.id,'Follow-up added','Follow-up on '+show(v.date)+': '+v.outcome);closeDlg();commit()}}))}
+function shipForm(o){const F=[['shipment','Shipment status','select',L.shipment,1],['quality','Quality status','select',L.quality,1],['shipDate','Required shipment date','date','',1],['holdReason','Hold reason (required if on hold)','text'],['nextAction','Next action','text']];
+ modal('Update shipment – '+o.id,formFor(F,o,{label:'Save shipment update',
+ validate:v=>{const e=[...reqErr(F,v),...dateErr(F,v)];if(v.shipment==='On Hold'&&!v.holdReason)e.push('Enter a hold reason when the shipment is On Hold.');const g=guard(v);if(g)e.push(g);return e},
+ onSave:v=>{if(!update(o,v))log(o.id,'Shipment status changed','Shipment details updated.');closeDlg();commit()}}))}
+function taskForm(t,orderId){const F=[['orderId','Related order ID','select',S.orders.map(o=>o.id),1],['dept','Department','select',L.dept,1],['desc','Task / issue description','textarea','',1],['person','Responsible person / role','text','',1],['created','Date created','date','',1],['due','Due date','date','',1],['priority','Priority','select',L.priority,1],['status','Status','select',L.task,1],['nextAction','Next action','text'],['latestUpdate','Latest update','textarea']];
+ if(!S.orders.length)return modal('Add task',el('p',{},'Add an order first.'));
+ modal(t?'Edit task':'Add task',formFor(F,t||Object.assign({},TB,{orderId:orderId||S.orders[0].id,created:today()}),{label:t?'Save task':'Add task',
+ validate:v=>{const e=[...reqErr(F,v),...dateErr(F,v)];if(isDate(v.created)&&isDate(v.due)&&v.due<v.created)e.push('Due date cannot be before the date created.');return e},
+ onSave:v=>{if(t){const ps=t.status;Object.assign(t,v);log(t.orderId,'Department task updated',t.dept+': "'+t.desc+'"'+(ps!==t.status?' status '+ps+' → '+t.status+'.':' edited.'))}
+  else{S.tasks.push(Object.assign({},TB,v,{id:uid('t')}));log(v.orderId,'Department task created',v.dept+': "'+v.desc+'" (due '+show(v.due)+').')}closeDlg();commit()}}))}
+
+/* ===== 9. EVENT HANDLERS & 10. APPLICATION INITIALIZATION ===== */
+const nav=document.getElementById('nav');
+TABS.forEach(([k,l])=>nav.append(el('button',{type:'button','data-v':k,onclick:()=>go(k,k==='orders'?{}:null)},l)));
+S=load();filt=defFilt();if(!corrupt)save();render();notifyCheck();
+window.addEventListener('focus',()=>{if(view!=='drafts'&&!dlg.open&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))render();notifyCheck()}); // recalculate date-based alerts when returning to the page
+})();
+</script>
+</body>
+</html>
